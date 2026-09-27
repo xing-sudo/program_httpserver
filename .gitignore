@@ -1,0 +1,7 @@
+3build/
+cmake-build-*/
+.vscode/
+.idea/
+*.user
+*.user.*
+*.suo
