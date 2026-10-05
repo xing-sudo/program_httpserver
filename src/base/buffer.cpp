@@ -1,20 +1,10 @@
-#pragma once
+#include "buffer.h"
 
-#include"logger.h"
-#include <vector>
-#include<assert.h>
-#include<string>
-#define BUFFER_SIZE 1024
-class Buffer
-{
-private:
-    uint64_t _write_pos;     // 写位置
-    uint64_t _read_pos;      // 读位置
-    std::vector<char> _data; // 容器
+#include <cassert>
+#include <cstring>
 
-public:
-    Buffer() : _write_pos(0), _read_pos(0), _data(BUFFER_SIZE) {}
-    Buffer &operator=(const Buffer &other) // 赋值重载
+    Buffer::Buffer() : _write_pos(0), _read_pos(0), _data(1024) {}
+    Buffer &Buffer::operator=(const Buffer &other) // 赋值重载
     {
         if (this != &other)
         {
@@ -26,44 +16,44 @@ public:
         // 实际上这里的赋值操作应该是深拷贝
         //_data=new vector<char>(*other._data); // 通过复制构造函数创建一个新的vector对象
     }
-    char *Head() // 获取容器头位置
+    char *Buffer::Head() // 获取容器头位置
     {
-        return &*_data.begin(); // data.begin()返回一个指向vector第一个元素的迭代器，&*操作符将其转换为指针
+        return _data.data();
     }
-    char *GetWritePos()
+    char *Buffer::GetWritePos()
     {
         return Head() + _write_pos; // 写位置指针
     }
-    char *GetReadPos()
+    char *Buffer::GetReadPos()
     {
         return Head() + _read_pos; // 读位置指针
     }
-    uint64_t TailSpace()
+    uint64_t Buffer::TailSpace()
     {
         return _data.size() - _write_pos; // 尾部剩余空间
     }
-    uint64_t HeadSpace()
+    uint64_t Buffer::HeadSpace()
     {
         return _read_pos; // 头部剩余空间
     }
-    uint64_t ReadAbleSize()
+    uint64_t Buffer::ReadAbleSize()
     {
         return _write_pos - _read_pos; // 可读数据大小
     }
     // 移动读位置
-    void MoveReadPos(uint64_t len)
+    void Buffer::MoveReadPos(uint64_t len)
     {
         assert(len <= ReadAbleSize());
         _read_pos += len;
     }
     // 移动写位置
-    void MoveWritePos(uint64_t len)
+    void Buffer::MoveWritePos(uint64_t len)
     {
         assert(len <= TailSpace());
         _write_pos += len;
     }
     // 确保有足够的空间写入数据
-    void EnsureSpace(uint64_t len)
+    void Buffer::EnsureSpace(uint64_t len)
     {
         if (TailSpace() >= len) // 如果尾部空间足够，直接返回
         {
@@ -74,7 +64,7 @@ public:
         if (HeadSpace() + TailSpace() >= len)
         {
             uint64_t readable_size = ReadAbleSize();                       // 保留可读数据大小
-            std::copy(GetReadPos(), GetReadPos() + readable_size, Head()); // 将可读数据移动到头部
+            std::memmove(Head(), GetReadPos(), readable_size); // 将可读数据移动到头部
             _read_pos = 0;                                                 // 更新读位置
             _write_pos = readable_size;                                    // 更新写位置
         }
@@ -83,7 +73,7 @@ public:
             _data.resize(_write_pos + len); // 否则，扩展容器大小
         }
     }
-    void Write(const void *data, uint64_t len)
+    void Buffer::Write(const void *data, uint64_t len)
     {
         if (len == 0)
         {
@@ -91,29 +81,50 @@ public:
         }
 
         EnsureSpace(len);                                                       // 确保有足够空间写入数据
-        std::copy((const char *)data, (const char *)data + len, GetWritePos()); // 将数据写入写位置
+        std::memcpy(GetWritePos(), data, len); // 将数据写入写位置
         MoveWritePos(len);                                                      // 更新写位置
     }
-    void Write(Buffer & buf)
+    void Buffer::Write( Buffer & buf)
     {
-        return Write(buf.GetReadPos(),buf.ReadAbleSize());
+        uint64_t len = buf.ReadAbleSize();
+        if(len == 0)
+        {
+            return;
+        }                     
+        if(this==&buf)
+        {
+            std::vector<char> temp(buf.GetReadPos(),buf.GetReadPos()+len);
+            Write(temp.data(),temp.size());
+            return;
+        }                             // 确保有足够空间写入数据
+        return Write(buf.GetReadPos(),len);
     }
     // 写入字符串
-    void Write(const std::string &str)
+    void Buffer::Write(const std::string &str)
     {
         Write(str.c_str(), str.size());
     }
     // 读取数据
-    void Read(void *buff, uint64_t len)
+    bool Buffer::Read(void *buff, uint64_t len)
     {
-        assert(len <= ReadAbleSize());
-        std::copy(GetReadPos(), GetReadPos() + len, (char *)buff);
+        if(len>ReadAbleSize()||(len!=0&&buff==nullptr))
+        {
+            return false;
+        }
+        if(len!=0)
+        {
+            std::memcpy(buff, GetReadPos(), len);
+        }
         MoveReadPos(len);
+        return true;
     }
     // 读取指定长度的数据并返回字符串
-    std::string ReadAsstring(uint64_t len)
+    std::string Buffer::ReadAsstring(uint64_t len)
     {
         assert(len <= ReadAbleSize());
+        if (len == 0) {
+            return {};
+        }
         std::string str;
         str.resize(len);
         Read(&str[0], len);
@@ -121,13 +132,13 @@ public:
     }
     // 查找CRLF位置
     // memchr()
-    char *FindCRLF()
+    char *Buffer::FindCRLF()
     {
         char *pos = (char *)memchr(GetReadPos(), '\n', ReadAbleSize()); // 查找换行符
         return pos;
     }
     // 读取一行数据，直到CRLF
-    std::string Getline()
+    std::string Buffer::Getline()
     {
         char *pos = FindCRLF();
         if (pos == nullptr)
@@ -137,9 +148,8 @@ public:
         return ReadAsstring(pos - GetReadPos() + 1);
     }
     // 清空缓冲区
-    void clear()
+    void Buffer::clear()
     {
         _write_pos = 0;
         _read_pos = 0;
     }
-};

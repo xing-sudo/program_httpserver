@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/xing/program_httpserver/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

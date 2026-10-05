@@ -1,0 +1,4 @@
+/home/xing/program_httpserver/build/CMakeFiles/base.dir
+/home/xing/program_httpserver/build/CMakeFiles/tmp.dir
+/home/xing/program_httpserver/build/CMakeFiles/edit_cache.dir
+/home/xing/program_httpserver/build/CMakeFiles/rebuild_cache.dir
