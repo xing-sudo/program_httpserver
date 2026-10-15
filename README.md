@@ -4,5 +4,8 @@
 base，net，http内部都包含include，src子目录
 base负责提供基础的模块支持主要有日志，缓冲区，以及手写的类型擦除器用于存放任意类型上下文
 构建与运行：
+在项目根目录下敲即可
+cmake -S . -B build-bench -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2 -DLOG_LEVEL=99"
+cmake --build build-bench --target http_server -j4
 
 当前状态与计划：正在完善协议边界、生命周期和测试，后续推进流式推理网关
