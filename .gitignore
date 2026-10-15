@@ -1,7 +1,17 @@
-3build/
+# 构建产物
+build/
 cmake-build-*/
+
+# IDE
 .vscode/
 .idea/
+*.code-workspace
 *.user
 *.user.*
 *.suo
+
+# 编译中间文件与库
+*.o
+*.d
+*.a
+*.so

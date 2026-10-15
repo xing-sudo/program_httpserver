@@ -1,7 +1,10 @@
 // HTTP Server 测试 main
-// 编译命令：g++ -o http_server http_main.cpp -std=c++11 -lpthread -O2
-// 运行前需要创建静态资源目录：mkdir -p ./wwwroot && echo "<h1>Hello HTTP Server!</h1>" > ./wwwroot/index.html
-#include "http.cpp"
+// 构建：cmake --build build --target http_server
+// 运行：./build/http_server（需要当前目录存在 wwwroot/index.html）
+#include "http_server.h"
+
+#include <cstdio>
+#include <string>
 
 int main()
 {

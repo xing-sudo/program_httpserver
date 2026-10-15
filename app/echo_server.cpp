@@ -1,13 +1,24 @@
-// echo_main.cpp
 // EchoServer 测试入口
-// 编译命令：g++ -o echo_server echo_main.cpp -std=c++11 -lpthread -O2
-// 运行：./echo_server
+// 构建：cmake --build build --target echo_server
+// 运行：./build/echo_server
 // 测试：telnet 127.0.0.1 9090  或  nc 127.0.0.1 9090
 
-#include "source.cpp"
+#include "logger.h"
+#include "tcpServer.h"
 
+#include <csignal>
+#include <string>
 
 // 全局 SIGPIPE 屏蔽（防止对端关闭时服务器崩溃）
+class NetWork
+{
+public:
+    NetWork()
+    {
+        DBG_LOG("SIGPIPE INIT");
+        signal(SIGPIPE, SIG_IGN);
+    }
+};
 static NetWork g_network;
 
 // ---- 回调函数 ----
