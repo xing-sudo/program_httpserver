@@ -7,5 +7,7 @@ base负责提供基础的模块支持主要有日志，缓冲区，以及手写�
 在项目根目录下敲即可
 cmake -S . -B build-bench -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2 -DLOG_LEVEL=99"
 cmake --build build-bench --target http_server -j4
+./build/http_server 8080 1
+8080为端口号，1为线程数
 
 当前状态与计划：正在完善协议边界、生命周期和测试，后续推进流式推理网关
