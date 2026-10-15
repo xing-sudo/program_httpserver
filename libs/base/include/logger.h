@@ -5,11 +5,13 @@
 #include <cstdio>
 #include <pthread.h>
 
-// 日志级别常量（使用方未定义时提供默认值）
-#ifndef LOG_LEVEL
+// 日志级别常量
 #define INF 0
 #define DBG 1
 #define ERR 2
+// 阈值允许被构建系统覆盖：压测时用 -DLOG_LEVEL=99 彻底关掉日志
+// （原来四个宏共用一个 #ifndef，导致外部一旦定义 LOG_LEVEL，INF/DBG/ERR 就缺失而编译失败）
+#ifndef LOG_LEVEL
 #define LOG_LEVEL INF
 #endif
 

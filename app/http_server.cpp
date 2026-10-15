@@ -4,18 +4,25 @@
 #include "http_server.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 
-int main()
+// 用法：./http_server [port] [thread_count]
+//   port         默认 8080
+//   thread_count 从属 IO 线程数，0 表示只用主线程（便于压测对比单核/多核扩展比）
+int main(int argc, char *argv[])
 {
-    // 1. 创建 HttpServer，端口 8080，60秒无活动超时
-    HttpServer server(8080, 60);
+    const int port = (argc > 1) ? std::atoi(argv[1]) : 8080;
+    const int thread_count = (argc > 2) ? std::atoi(argv[2]) : 0;
+
+    // 1. 创建 HttpServer，端口 port，60秒无活动超时
+    HttpServer server(port, 60);
 
     // 2. 设置静态资源根目录（提前创建好 ./wwwroot 目录）
     server.SetBaseDir("./wwwroot");
 
-    // 3. 设置线程数（建议设置为 CPU 核心数）
-    server.SetThreadCount(4);
+    // 3. 设置线程数
+    server.SetThreadCount(thread_count);
 
     // ---------------------------------------------------------------
     // 4. 注册动态路由
@@ -82,7 +89,7 @@ int main()
     // ---------------------------------------------------------------
     // 5. 启动服务器（阻塞）
     // ---------------------------------------------------------------
-    printf("[HttpServer] Listening on port 8080...\n");
+    printf("[HttpServer] Listening on port %d, io threads=%d...\n", port, thread_count);
     printf("[HttpServer] Static dir: ./wwwroot\n");
     printf("[HttpServer] Routes: /hello  /info  /echo?msg=xxx  /submit(POST)  /redirect\n");
     server.Listen();
