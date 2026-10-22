@@ -153,7 +153,7 @@ void HttpServer::OnMessage(const PtrConnection &conn, Buffer *buf) //buffer内�
         if (context->GetRespStatus() >= 400)
         { //错误响应
             ErrorHandler(req, &rsp);
-            WriteResponse(conn, req, rsp);
+            WriteResponse(conn, req, rsp,true);
             context->Reset();
             buf->MoveReadPos(buf->ReadAbleSize());
             conn->Shutdown();
@@ -179,10 +179,10 @@ void HttpServer::OnMessage(const PtrConnection &conn, Buffer *buf) //buffer内�
     return;
 }
 
-void HttpServer::WriteResponse(const PtrConnection &conn, const HttpRequest &req, HttpResponse &rsp) //构造响应
+void HttpServer::WriteResponse(const PtrConnection &conn, const HttpRequest &req, HttpResponse &rsp,bool needClose) //构造响应
 {
-    //1.构造响应头部
-    if (req.Close() == true)
+    //1.构造响应头
+    if (req.Close() == true|| needClose)//处理错误连接需要把响应报头加上close
     {
         rsp.SetHeader("Connection", "Close");
     }
@@ -204,15 +204,18 @@ void HttpServer::WriteResponse(const PtrConnection &conn, const HttpRequest &req
     }
     //2.将rsp中的要素按照http的协议格式进行组织
     std::stringstream rsp_str;
-    rsp_str << req._version << " " << std::to_string(rsp._status) << " " << Util::StatusDesc(rsp._status) << "\r\n";
+    rsp_str << req.GetVersion() << " " << std::to_string(rsp._status) << " " << Util::StatusDesc(rsp._status) << "\r\n";
     for (auto &head : rsp._headers)
     {
         rsp_str << head.first << ": " << head.second << "\r\n";
     }
     rsp_str << "\r\n";
+
+    if(req._method!="HEAD")//head方法是不能带body的
     rsp_str << rsp._body;
     //3.发送响应
-    conn->Send(rsp_str.str().c_str(), rsp_str.str().size());
+    std::string resp=rsp_str.str();
+    conn->Send(resp.data(), rsp_str.str().size());
     return;
 }
 

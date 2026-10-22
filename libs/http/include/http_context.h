@@ -20,8 +20,15 @@ class Httpcontext
 private:
     int _resp_status;            // 响应状态码
     HttpRecvStatus _recv_status; // 接收及解析状态
-    HttpRequest _request;        // 已经解析得到的请求信息
+    HttpRequest _request;  // 已经解析得到的请求信息
+    size_t nowBytes=0;//对于这条请求已经处理请求头的字节数
+    size_t nowCount=0;//对于这条请求已经处理的请求头个数
 private:
+    inline void Fail(int status)
+    {
+        _resp_status=status;
+        _recv_status=RECV_HTTP_ERROR;
+    }
     bool RecvHttpLine(Buffer *buff);
     bool RecvHttpHead(Buffer *buff);
     bool RecvHttpBody(Buffer *buff);
@@ -34,6 +41,8 @@ public:
         _resp_status = 200;
         _recv_status = RECV_HTTP_LINE;
         _request.Reset();
+        nowBytes=0;
+        nowCount=0;
     }
     int GetRespStatus()
     {

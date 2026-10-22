@@ -33,7 +33,7 @@ private:
     void Route(HttpRequest &req, HttpResponse *rsp);
     void OnConnected(const PtrConnection &conn);            // 连接建立，设置上下文
     void OnMessage(const PtrConnection &conn, Buffer *buf); // buffer内的数据处理
-    void WriteResponse(const PtrConnection &conn, const HttpRequest &req, HttpResponse &rsp); // 构造响应
+    void WriteResponse(const PtrConnection &conn, const HttpRequest &req, HttpResponse &rsp,bool needClose=false); // 构造响应
 public:
     HttpServer(int port, int timerout);
     void SetBaseDir(const std::string &basedir);

@@ -26,7 +26,7 @@ private:
     Poller _poller;
     std::vector<Func> _tasks; // 任务池
     std::mutex _mutex;        // 保护任务池线程安全
-    TimerWheel _timer_wheel;  // 时间轮定时器
+    std::shared_ptr<TimerWheel> _timer_wheel;  // 时间轮定时器
 public:
     void RunAllTask();
     // 对eventfd的操作封装
@@ -71,18 +71,18 @@ public:
     }
     void TimerAdd(uint64_t id, uint32_t delay, const Taskfunc &cb)
     {
-        _timer_wheel.TimerAdd(id, delay, cb);
+        _timer_wheel->TimerAdd(id, delay, cb);
     }
     void TimerRefresh(uint64_t id)
     {
-        _timer_wheel.TimerRefresh(id);
+        _timer_wheel->TimerRefresh(id);
     }
     void TimerCancel(uint64_t id)
     {
-        _timer_wheel.TimerCancel(id);
+        _timer_wheel->TimerCancel(id);
     }
     bool HasTimer(uint64_t id)
     {
-        return _timer_wheel.HasTimer(id);
+        return _timer_wheel->HasTimer(id);
     }
 };

@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         body += "<h2>Request Info</h2>";
         body += "<p>Method: " + req._method + "</p>";
         body += "<p>Path: " + req._path + "</p>";
-        body += "<p>Version: " + req._version + "</p>";
+        body += "<p>Version: " + req.GetVersion() + "</p>";
         body += "<h3>Headers:</h3><ul>";
         for (auto& h : req._headers) {
             body += "<li>" + h.first + ": " + h.second + "</li>";

@@ -1,7 +1,12 @@
 # 构建产物
 build/
+build-*/
 cmake-build-*/
 
+#测试原始日志
+testlog/
+keepalive-*
+server-*
 # IDE
 .vscode/
 .idea/

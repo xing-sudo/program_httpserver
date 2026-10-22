@@ -44,13 +44,29 @@ int TimerWheel::ReadTimerfd()
         ERR_LOG("read timerfd failed!!");
         abort();
     }
-    return (int)times;
+    return static_cast<int>(times);
 }
 
 void TimerWheel::Run()
 {
     _tick = (_tick + 1) % _capacity; // 秒针走一步
-    _wheel[_tick].clear();           // 释放该位置的所有定时器对象
+    auto& it=_wheel[_tick];
+    std::vector<TimerWheel::ShPtrTask>tmp;
+    std::erase_if(it,[&](TimerWheel::ShPtrTask& e ){
+        if(e->getCount()>0)
+        {
+            e->decreaseCount();
+            return false;
+        }else{
+            tmp.push_back(e);//先清空槽位，再处理任务
+            _timer.erase(e->getId());//正在执行说明这个任务不可用了，就不要再刷新了
+            return true;
+        }
+    });
+    for(auto& task:tmp)
+    {
+        task->executeTask();
+    }
 }
 
 void TimerWheel::OnTime()
@@ -86,7 +102,23 @@ void TimerWheel::TimerRefreshInLoop(uint64_t id)
         ERR_LOG("TimerRefreshInLoop weak_ptr is nullptr");
         return;
     }
+    if(pt->isInExecute())
+    {
+        return ;
+    }
     int delay = pt->Delaytime();
+    pt->resetCount(delay);
+    for(auto& slot:_wheel)//删除槽内旧的事件
+    {
+        std::erase_if(slot,[&](TimerWheel::ShPtrTask& task){
+            if(task->getId()==id)
+            {
+                return true;
+            }else{
+                return false;
+            }
+        });
+    }
     int pos = (_tick + delay) % _capacity; // 计算该定时器对象应该放到时间轮的哪个位置
     _wheel[pos].push_back(pt);             // 放入时间轮
 }
@@ -113,15 +145,33 @@ TimerWheel::TimerWheel(EventLoop *loop) : _tick(0), _capacity(60), _wheel(_capac
 
 void TimerWheel::TimerAdd(uint64_t id, uint32_t delay, const Taskfunc &cb)
 {
-    return _loop->RunInLoop(std::bind(&TimerWheel::TimerAddInLoop, this, id, delay, cb));
+    std::weak_ptr<TimerWheel> it=shared_from_this();
+    _loop->RunInLoop([it,id,delay,cb](){
+        if(auto ptr=it.lock())
+        {
+            ptr->TimerAddInLoop(id,delay,cb);
+        }
+    });
 }
 
 void TimerWheel::TimerCancel(uint64_t id)
 {
-    _loop->RunInLoop(std::bind(&TimerWheel::TimerCancelInLoop, this, id));
+    std::weak_ptr<TimerWheel> it=shared_from_this();
+    _loop->RunInLoop([it,id](){
+        if(auto ptr=it.lock())
+        {
+            ptr->TimerCancelInLoop(id);
+        }
+    });
 }
 
 void TimerWheel::TimerRefresh(uint64_t id)
 {
-    return _loop->RunInLoop(std::bind(&TimerWheel::TimerRefreshInLoop, this, id));
+    std::weak_ptr<TimerWheel> it=shared_from_this();
+    _loop->RunInLoop([it,id](){
+        if(auto ptr=it.lock())
+        {
+            ptr->TimerRefreshInLoop(id);
+        }
+    });
 }

@@ -71,7 +71,7 @@ void EventLoop::WakeUpEventFd()
 EventLoop::EventLoop() : _thread_id(std::this_thread::get_id()),
                          _event_fd(CreatEventFd()),
                          _event_channel(new Channel(this, _event_fd)),
-                         _timer_wheel(this)
+                         _timer_wheel(std::make_shared<TimerWheel>(this))
 {
     // 给eventfd设置读回调 读取通知次数 类内调用成员函数要传递this指针
     _event_channel->SetReadCallBack(std::bind(&EventLoop::ReadEeventFd, this));

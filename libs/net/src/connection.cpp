@@ -97,6 +97,8 @@ void Connection::EstablishedInLoop()
 
 void Connection::ReleaseInLoop()
 {
+    if(_status==DISCONNECTED)
+    return;
     // 1.修改连接状态
     _status = DISCONNECTED;
     // 2.移除事件监控
@@ -120,7 +122,7 @@ void Connection::ReleaseInLoop()
     }
 }
 
-void Connection::SendInLoop(Buffer &buf)
+void Connection::SendInLoop(Buffer buf)
 {
     if (_status == DISCONNECTED)
     {
@@ -170,7 +172,14 @@ void Connection::EnableInactiveReleaseInLoop(int sec)
         return _loop->TimerRefresh(_connection_id);
     }
     // 没有则添加
-    _loop->TimerAdd(_connection_id, sec, std::bind(&Connection::Release, this));
+    _loop->TimerAdd(_connection_id,sec,[it=weak_from_this()](){
+        if(auto ptr=it.lock())
+        {
+            if(ptr->_status==DISCONNECTED)
+            return;
+            ptr->ReleaseInLoop();
+        }
+    });
 }
 
 void Connection::CancelInactiveReleaseInLoop()

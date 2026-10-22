@@ -1,6 +1,6 @@
 #pragma once
 
-#include"logger.h"
+#include "logger.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -14,6 +14,9 @@ private:
 
 public:
     Buffer();
+    Buffer(Buffer &&other) noexcept=default;
+    Buffer(const Buffer &other)=default;
+    Buffer &operator=(Buffer &&other) noexcept=default;
     Buffer &operator=(const Buffer &other);
     char *Head();
     char *GetWritePos();

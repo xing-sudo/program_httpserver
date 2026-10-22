@@ -32,7 +32,10 @@ cd "$ROOT" || exit 1
 BUILD=build-bench
 BIN=$BUILD/http_server
 OUT=benchmark/results.md
+RAW_DIR="${RAW_DIR:-benchmark/raw}"
 SRV_LOG=$(mktemp)
+
+mkdir -p "$RAW_DIR"
 
 # ---------------------------------------------------------------- 核分配
 # 服务端和压测客户端各占一半，避免互相抢核污染数据
@@ -42,6 +45,12 @@ if [ "$TOTAL" -ge 4 ]; then
     SRV_CORES="0-$((HALF - 1))"
     CLI_CORES="$HALF-$((TOTAL - 1))"
     WRK_T=$HALF
+elif [ "$TOTAL" -eq 2 ]; then
+    # 两核机器上必须给客户端单独留一个核，否则服务端和 wrk2 会互相抢占。
+    # 此时建议 THREADS=0，把服务端作为单线程 Reactor 进行基线测试。
+    SRV_CORES="0"
+    CLI_CORES="1"
+    WRK_T=1
 else
     SRV_CORES="0"
     CLI_CORES="0"
@@ -116,11 +125,18 @@ proc_ticks() {
 # $1=场景描述 $2=目标速率（wrk2 的 -R 是必填项，不能省）其余参数透传给 wrk2
 run_one() {
     local desc="$1" rate="$2"; shift 2
-    local out rps p50 p99 p999 util t0 t1
+    local out rps p50 p99 p999 util t0 t1 raw_file safe_label safe_desc
+
+    safe_label=$(printf '%s' "$LABEL" | tr -c 'A-Za-z0-9_.-' '_')
+    safe_desc=$(printf '%s' "$desc" | tr -c 'A-Za-z0-9_.-' '_')
+    raw_file="$RAW_DIR/${safe_label}_${safe_desc}_${rate}.log"
 
     t0=$(proc_ticks)
-    out=$(taskset -c "$CLI_CORES" wrk2 -t"$WRK_T" -c"$CONNS" -d"$DURATION" -R"$rate" --latency "$@" \
-          "http://127.0.0.1:$PORT/hello" 2>&1)
+    if ! out=$(taskset -c "$CLI_CORES" wrk2 -t"$WRK_T" -c"$CONNS" -d"$DURATION" -R"$rate" --latency "$@" \
+          "http://127.0.0.1:$PORT/hello" 2>&1 | tee "$raw_file"); then
+        echo "❌ wrk2 failed in $desc at RPS $rate; raw output: $raw_file" >&2
+        return 1
+    fi
     t1=$(proc_ticks)
 
     rps=$(awk '/^Requests\/sec:/{print $2}' <<<"$out")
@@ -132,6 +148,7 @@ run_one() {
 
     printf '%-28s RPS=%-10s QPS=%-10s P50=%-10s P99=%-10s P99.9=%-10s CPU=%s\n' \
            "$desc" "${rate:--}" "${rps:-ERR}" "${p50:-?}" "${p99:-?}" "${p999:-?}" "$util"
+    echo "  raw output: $raw_file"
 
     echo "| $LABEL | $desc | $CONNS | ${rate:--} | ${rps:-ERR} | ${p50:-?} | ${p99:-?} | ${p999:-?} | $util |" >>"$OUT"
 }

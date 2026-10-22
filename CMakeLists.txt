@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 
 project(HttpServer LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Threads REQUIRED)
 # base类 1.添加静态库 2.添加头文件 3.链接成库
@@ -14,7 +16,7 @@ libs/base/src/any.cpp
 target_include_directories(base PUBLIC
     libs/base/include
 )
-target_link_libraries(base PUBLIC Threads::threads)
+target_link_libraries(base PUBLIC Threads::Threads)
 
 # net类：Reactor网络模块
 add_library(net STATIC 
@@ -56,3 +58,14 @@ target_link_libraries(http_server PRIVATE http)
 
 add_executable(echo_server app/echo_server.cpp)
 target_link_libraries(echo_server PRIVATE net)
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(http_request_test tests/http_request_test.cpp)
+    target_link_libraries(http_request_test PRIVATE http)
+    add_test(NAME http_request_test COMMAND http_request_test)
+
+    add_executable(timer_wheel_test tests/timer_wheel_test.cpp)
+    target_link_libraries(timer_wheel_test PRIVATE net)
+    add_test(NAME timer_wheel_test COMMAND timer_wheel_test)
+endif()

@@ -7,7 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include<unistd.h>
+#include <unistd.h>
 
 class EventLoop;
 
@@ -18,18 +18,17 @@ class EventLoop;
 //     struct timespec it_interval; // 定时器的间隔时间
 //     struct timespec it_value;    // 定时器的初始值
 // };
-class TimerWheel
+class TimerWheel : public std::enable_shared_from_this<TimerWheel>
 {
 private:
     using WeakTask = std::weak_ptr<Timetask>;
     using ShPtrTask = std::shared_ptr<Timetask>;
-    int _tick;                                     /// 秒针走到哪释放哪
-    int _capacity;                                 // 最大延迟时间
-    std::vector<std::vector<ShPtrTask>> _wheel;    // 时间轮
-    std::unordered_map<uint64_t, WeakTask> _timer; // 定时器id到定时器对象的映射
-
+    int _tick;     /// 秒针走到哪释放哪
+    int _capacity; // 最大延迟时间
     EventLoop *_loop;
     int _timerfd;
+    std::unordered_map<uint64_t, WeakTask> _timer; // 定时器id到定时器对象的映射
+    std::vector<std::vector<ShPtrTask>> _wheel;    // 时间轮
     std::unique_ptr<Channel> _timer_channel;
 
 private:
@@ -41,10 +40,20 @@ private:
     void TimerAddInLoop(uint64_t id, uint32_t delay, const Taskfunc &cb);
     void TimerRefreshInLoop(uint64_t id);
     void TimerCancelInLoop(uint64_t id);
+
 public:
     TimerWheel(EventLoop *loop);
     ~TimerWheel()
     {
+        for (auto &slot : _wheel)
+        {
+            for (auto &ptr : slot)
+            {
+                ptr->cancel(); // 取消所有定时任务
+            }
+        }
+        _wheel.clear();
+        _timer.clear();
         close(_timerfd);
     }
     void TimerAdd(uint64_t id, uint32_t delay, const Taskfunc &cb);
