@@ -9,6 +9,7 @@ keepalive-*
 server-*
 perf-*
 perf.*
+client*
 benchmark/raw
 # IDE
 .vscode/
