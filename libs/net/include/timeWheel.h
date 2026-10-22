@@ -21,25 +21,36 @@ class EventLoop;
 class TimerWheel : public std::enable_shared_from_this<TimerWheel>
 {
 private:
-    using WeakTask = std::weak_ptr<Timetask>;
-    using ShPtrTask = std::shared_ptr<Timetask>;
+    struct TimeNode
+    {
+        uint64_t id;
+        std::shared_ptr<Timetask> task;
+    };
+    struct TimePosition
+    {
+        uint32_t slot;
+        uint32_t index;
+    };
+    using Slot=std::vector<TimeNode>;
     int _tick;     /// 秒针走到哪释放哪
     int _capacity; // 最大延迟时间
     EventLoop *_loop;
     int _timerfd;
-    std::unordered_map<uint64_t, WeakTask> _timer; // 定时器id到定时器对象的映射
-    std::vector<std::vector<ShPtrTask>> _wheel;    // 时间轮
+    std::unordered_map<uint64_t, TimePosition> _timer; // 定时器id到定时器对象的映射
+    std::vector<Slot> _wheel;    // 时间轮
     std::unique_ptr<Channel> _timer_channel;
 
 private:
     void RemoveTimer(uint64_t id);
     static int Createtimerfd();
     int ReadTimerfd();
-    void Run();
+    void Run(int ticks);
     void OnTime();
+    void executeTask();
     void TimerAddInLoop(uint64_t id, uint32_t delay, const Taskfunc &cb);
     void TimerRefreshInLoop(uint64_t id);
     void TimerCancelInLoop(uint64_t id);
+    std::shared_ptr<Timetask> detachNode(uint64_t id);
 
 public:
     TimerWheel(EventLoop *loop);
@@ -48,8 +59,7 @@ public:
         for (auto &slot : _wheel)
         {
             for (auto &ptr : slot)
-            {
-                ptr->cancel(); // 取消所有定时任务
+            { // 取消所有定时任务
             }
         }
         _wheel.clear();

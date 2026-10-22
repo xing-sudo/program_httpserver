@@ -7,6 +7,9 @@ cmake-build-*/
 testlog/
 keepalive-*
 server-*
+perf-*
+perf.*
+benchmark/raw
 # IDE
 .vscode/
 .idea/

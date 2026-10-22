@@ -52,3 +52,22 @@
 | baseline-2c | close | 500 | 500 | 483.31 | 14.91ms | 46.01ms | 48.10ms | 2% |
 | baseline-2c | close | 500 | 1000 | 976.55 | 2.39ms | 41.76ms | 44.74ms | 7% |
 | baseline-2c | close | 500 | 2000 | 1932.05 | 82.82ms | 154.75ms | 201.34ms | 17% |
+
+## baseline-2c  (2026-10-22 18:20)
+
+- commit: `60eeb02`  IO线程: 0  机器: 4核
+- 服务端绑核 `0-1` / 压测端绑核 `2-3`，构建 `-O2 -DLOG_LEVEL=99`
+
+| 标签 | 场景 | 并发 | 目标RPS | QPS | P50 | P99 | P99.9 | 服务端CPU |
+|---|---|---|---|---|---|---|---|---|
+| baseline-2c | keep-alive | 500 | 500 | 483.42 | 1.60ms | 4.30ms | 5.09ms | 0% |
+| baseline-2c | keep-alive | 500 | 1000 | 966.61 | 1.58ms | 3.99ms | 4.80ms | 1% |
+| baseline-2c | keep-alive | 500 | 2000 | 1950.11 | 1.19ms | 3.95ms | 6.30ms | 2% |
+| baseline-2c | keep-alive | 500 | 4000 | 3894.88 | 1.31ms | 3.96ms | 5.94ms | 3% |
+| baseline-2c | keep-alive | 500 | 6000 | 5796.50 | 1.64ms | 5.27ms | 10.07ms | 4% |
+| baseline-2c | keep-alive | 500 | 8000 | 7728.20 | 1.65ms | 4.74ms | 16.00ms | 6% |
+| baseline-2c | keep-alive | 500 | 10000 | 9659.21 | 1.46ms | 4.06ms | 7.86ms | 6% |
+| baseline-2c | close | 500 | 250 | 242.11 | 2.80ms | 8.97ms | 9.82ms | 0% |
+| baseline-2c | close | 500 | 500 | 490.03 | 1.28ms | 9.06ms | 10.30ms | 1% |
+| baseline-2c | close | 500 | 1000 | 966.98 | 2.80ms | 8.44ms | 10.54ms | 2% |
+| baseline-2c | close | 500 | 2000 | 1933.36 | 2.73ms | 7.52ms | 16.43ms | 3% |
