@@ -58,7 +58,7 @@ void TimerWheel::executeTask()
     size_t pos = 0;
     while (pos < queue.size())
     {
-        const uint32_t id = queue[pos].id;
+        const uint64_t id = queue[pos].id;
         auto &task = queue[pos].task;
         if (task->getCount() > 0)
         {
