@@ -23,6 +23,7 @@ public:
 
     ~Timetask()
     {
+        if(_Destroy)
         _Destroy();
     }
     inline void executeTask()

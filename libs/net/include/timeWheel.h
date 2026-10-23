@@ -56,10 +56,11 @@ public:
     TimerWheel(EventLoop *loop);
     ~TimerWheel()
     {
-        for (auto &slot : _wheel)
+        for(auto&queue:_wheel)
         {
-            for (auto &ptr : slot)
-            { // 取消所有定时任务
+            for(auto &ptr:queue)
+            {
+                ptr.task->cancel();
             }
         }
         _wheel.clear();
