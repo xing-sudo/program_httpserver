@@ -5,12 +5,16 @@ cmake-build-*/
 
 #测试原始日志
 testlog/
-keepalive-*
-server-*
-perf-*
-perf.*
-client*
+/keepalive-*
+/server-*
+/perf-*
+/perf.*
+/client*
 benchmark/raw
+local-final-*/
+/local-final-bench.sh
+local-keepalive-*
+local-wrk2-*
 # IDE
 .vscode/
 .idea/
